@@ -1,0 +1,6 @@
+# Data for testing creation of the reports
+data/
+# Virtual environment
+.venv/
+# Python cache
+__pycache__/
