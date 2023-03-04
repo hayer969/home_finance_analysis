@@ -36,20 +36,27 @@ def prepare_data(filename: str) -> pd.DataFrame:
         workbook[key] = workbook[key].set_index([("дата", "дата")])
 
     workbook_incomes = {key: value["доход"] for (key, value) in workbook.items()}
-    for key, sheet in workbook_incomes.items():
-        workbook_incomes[key] = sheet.drop("общ. приход", axis="columns")
+    for key in workbook_incomes.keys():
+        workbook_incomes[key] = workbook_incomes[key].drop(
+            "общ. приход", axis="columns"
+        )
+        workbook_incomes[key] = workbook_incomes[key].fillna(0)
+
     workbook_savings = {
         key: value.xs("остаток", level=1, axis="columns", drop_level=False)
         for (key, value) in workbook.items()
     }
-
-    for key, sheet in workbook_savings.items():
-        workbook_savings[key] = sheet.droplevel(0, axis="columns").squeeze()
+    for key in workbook_savings.keys():
+        workbook_savings[key] = (
+            workbook_savings[key].droplevel(0, axis="columns").squeeze()
+        )
+        workbook_savings[key] = workbook_savings[key].fillna(0)
 
     workbook_expenses = {}
-    for key, sheet in workbook.items():
-        idx = sheet.columns.get_level_values(1).tolist().index("остаток")
-        workbook_expenses[key] = sheet.iloc[:, idx + 1 :]
+    for key in workbook.keys():
+        idx = workbook[key].columns.get_level_values(1).tolist().index("остаток")
+        workbook_expenses[key] = workbook[key].iloc[:, idx + 1 :]
+        workbook_expenses[key] = workbook_expenses[key].fillna(0)
 
     food_consuming = pd.read_excel(
         filename,
@@ -63,12 +70,13 @@ def prepare_data(filename: str) -> pd.DataFrame:
     # Не подходит по названиям, это исключение
     food_consuming.pop("Декабрь_2022")
 
-    for key, sheet in food_consuming.items():
-        food_consuming[key] = sheet.squeeze("columns")
+    for key in food_consuming.keys():
+        food_consuming[key] = food_consuming[key].squeeze("columns")
         food_consuming[key] = food_consuming[key].transpose()
         food_consuming[key].index = (
             workbook_expenses[key]["еда"].columns.get_level_values(0).tolist()[:5]
         )
+        food_consuming[key] = food_consuming[key].fillna(0)
 
     return workbook_incomes, workbook_savings, workbook_expenses, food_consuming
 
@@ -83,9 +91,32 @@ expenses.pop("Декабрь_2022")
 inc_sum_dict = {key: value.sum() for (key, value) in incomes.items()}
 chart_incomes = pd.DataFrame(inc_sum_dict)
 chart_incomes = chart_incomes.transpose()
-ch_in_x = chart_incomes.plot(kind="bar", width=1.5, position=0)
-ch_in_x.set_xticklabels(chart_incomes.index.tolist(), rotation=270)
-for p in ch_in_x.patches:
-    ch_in_x.annotate(str(p.get_height()), (p.get_x() * 1.005, p.get_height() * 1.005))
+chart_incomes["итого"] = chart_incomes.sum("columns")
+mask = chart_incomes.copy()
+mask.loc[:, :] = False
+mask["итого"] = True
+mask = mask.transpose()
+mask = mask.to_numpy().flatten()
+
+plt.rcParams.update({"figure.autolayout": True})
+ax = chart_incomes.plot(kind="bar", position=0.5)
+ax.set_xticklabels(chart_incomes.index.tolist(), rotation=270)
+
+for i, p in enumerate(ax.patches):
+    text = str(p.get_height()) if p.get_height() != 0 else ""
+    if mask[i]:
+        ax.annotate(text, (p.get_x(), p.get_height() * 1.05))
+        plt.setp(
+            p,
+            width=0.9,
+            zorder=1,
+            x=p.get_x() - 0.5,
+            color="#fff7c4",
+        )
+    else:
+        ax.annotate(text, (p.get_x() - 0.025, p.get_height() * 0.9))
+        plt.setp(p, width=0.2, zorder=2)
+
+ax.legend()
 plt.show()
 # %%
