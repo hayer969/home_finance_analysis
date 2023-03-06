@@ -17,7 +17,7 @@ def prepare_data(filename: str) -> pd.DataFrame:
     workbook = pd.read_excel(
         filename,
         sheet_name=None,
-        nrows=30,
+        nrows=31,
         skiprows=2,
         header=None,
     )
@@ -116,6 +116,44 @@ for i, p in enumerate(ax.patches):
     else:
         ax.annotate(text, (p.get_x() - 0.025, p.get_height() * 0.9))
         plt.setp(p, width=0.2, zorder=2)
+
+ax.legend()
+plt.show()
+# %%
+# Прибыль за год
+inc_dict = {key: value.values.sum() for (key, value) in incomes.items()}
+savings_dict = {key: value.iat[-1] for (key, value) in savings.items()}
+expenses_dict = {key: value.values.sum() for (key, value) in expenses.items()}
+
+chart_margin = pd.DataFrame()
+chart_margin["Доходы"] = pd.Series(inc_dict)
+chart_margin["Расходы"] = pd.Series(expenses_dict)
+chart_margin["Прибыль"] = chart_margin["Доходы"] - chart_margin["Расходы"]
+chart_margin["Накопления"] = pd.Series(savings_dict)
+mask = chart_margin.copy()
+for i in range(len(mask.columns)):
+    mask.iloc[:, i] = i + 1
+mask = mask.transpose()
+mask = mask.to_numpy().flatten()
+
+plt.rcParams.update({"figure.autolayout": True})
+ax = chart_margin.plot(kind="bar", position=0.5)
+ax.set_xticklabels(chart_margin.index.tolist(), rotation=270)
+
+for i, p in enumerate(ax.patches):
+    text = str(p.get_height()) if p.get_height() != 0 else ""
+    ax.annotate(text, (p.get_x(), p.get_height() * 1.05))
+    if mask[i] == 4:
+        plt.setp(
+            p,
+            width=0.9,
+            zorder=1,
+            x=p.get_x() - 0.5,
+            color="#fff7c4",
+        )
+    else:
+        distance = p.get_x() + 0.1 * mask[i] - 0.1
+        plt.setp(p, width=0.2, zorder=2, x=distance)
 
 ax.legend()
 plt.show()
