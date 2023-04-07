@@ -91,9 +91,9 @@ def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None
     """Plot margin bar chart
     ----------
     Parameters:
-    inc_dict: dictionary with monthly incomes
-    savings_dict: dictionary with monthly savings
-    expenses_dict: dictionary with monthly expenses
+    inc_dict : dictionary with monthly incomes
+    savings_dict : dictionary with monthly savings
+    expenses_dict : dictionary with monthly expenses
     -------
     Returns:
     picture from matplotlib
@@ -127,7 +127,12 @@ def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None
             )
         else:
             distance = p.get_x() + 0.1 * mask[i] - 0.1
-            height = p.get_height() * 1.1
+            abs_height = abs(p.get_height())
+            height = (
+                p.get_height() * (1 + mask[i] * 0.1)
+                if abs_height < 100000
+                else p.get_height()
+            )
             ax.annotate(text, (distance, height))
             plt.setp(p, width=0.2, zorder=2, x=distance, color=color[mask[i] - 1])
 
@@ -140,8 +145,8 @@ def sort_dict_by_time(source_dict: dict, ascending: bool = True) -> dict:
     """Sort dictionary by key by time
     ----------
     Parameters:
-    source_dict: dictionary with keys in format Month_Year
-    ascending: sort order
+    source_dict : dictionary with keys in format Month_Year
+    ascending : sort order
     -------
     Returns:
     sorted dictionary
@@ -178,6 +183,73 @@ def sort_dict_by_time(source_dict: dict, ascending: bool = True) -> dict:
     return sorted_dict
 
 
+def forecast(source_dict: dict, until: str, method: str = "mean") -> dict:
+    """Forecast future incomes or expenses
+    ----------
+    Parameters:
+    source_dict : dictionary with incomes-expenses data
+    until : date until which data was recorded (inclusivly)
+    method : method used for forcast, could be "mean" by default
+    -------
+    Returns:
+    dictionary with forcasted data
+    """
+    source_dict = sort_dict_by_time(source_dict)
+    forecasted_dict = {}
+    stop_summirize = False
+    mean = 0
+    for i, (key, value) in enumerate(source_dict.items()):
+        if not stop_summirize:
+            forecasted_dict[key] = value.values.sum()
+            if key == until:
+                sum = 0
+                for summand in forecasted_dict.values():
+                    sum += summand
+                mean = sum / (i + 1)
+                mean = round(mean)
+                stop_summirize = True
+        else:
+            forecasted_dict[key] = mean
+    return forecasted_dict
+
+
+def forecast_savings(
+    source_dict: dict,
+    incomes_dict: dict,
+    expenses_dict: dict,
+    until: str,
+    method: str = "mean",
+) -> dict:
+    """Forecast future savings
+    ----------
+    Parameters:
+    source_dict : dictionary with savings data
+    incomes_dict : dictionary with incomes data
+    expenses_dict : dictionary with expenses data
+    until : date until which data was recorded (inclusivly)
+    method : method used for forcast, could be "mean" by default
+    -------
+    Returns:
+    dictionary with forcasted data
+    """
+    source_dict = sort_dict_by_time(source_dict)
+    incomes_dict = sort_dict_by_time(incomes_dict)
+    expenses_dict = sort_dict_by_time(expenses_dict)
+    forecasted_dict = {}
+    start_sum_savings = False
+    save_value = 0
+    for key, value in source_dict.items():
+        if not start_sum_savings:
+            forecasted_dict[key] = source_dict[key].iat[-1]
+            if key == until:
+                save_value = value.iat[-1]
+                start_sum_savings = True
+        else:
+            forecasted_dict[key] = incomes_dict[key] - expenses_dict[key] + save_value
+            save_value = forecasted_dict[key]
+    return forecasted_dict
+
+
 # %%
 my_2021 = "./data/incomes-expenses_2021.xlsx"
 my_2022 = "./data/incomes-expenses_2022.xlsx"
@@ -191,20 +263,23 @@ inc22, sav22, exp22, _ = prepare_data(
 inc23, sav23, exp23, food_cons23 = prepare_data(
     my_2023, drop=["Декабрь_2022"], food_consume=True
 )
+# %%
 incomes = {**inc21, **inc22, **inc23}
 savings = {**sav21, **sav22, **sav23}
 expenses = {**exp21, **exp22, **exp23}
-incomes = sort_dict_by_time(incomes)
-savings = sort_dict_by_time(savings)
-expenses = sort_dict_by_time(expenses)
-# %%
 # Прибыль за год
-inc_dict = {key: value.values.sum() for (key, value) in incomes.items()}
-savings_dict = {key: value.iat[-1] for (key, value) in savings.items()}
-expenses_dict = {key: value.values.sum() for (key, value) in expenses.items()}
+inc_dict = forecast(incomes, until="Март_2023")
+expenses_dict = forecast(expenses, until="Март_2023")
+savings_dict = forecast_savings(savings, inc_dict, expenses_dict, until="Март_2023")
+keys = list(inc_dict.keys())
+for key in keys:
+    if key == "Январь_2023":
+        break
+    del inc_dict[key]
+    del savings_dict[key]
+    del expenses_dict[key]
 
 plot_margin(inc_dict, savings_dict, expenses_dict)
-# %%
 # %%
 # Доход за год по группам
 inc_sum_dict = {key: value.sum() for (key, value) in incomes.items()}
