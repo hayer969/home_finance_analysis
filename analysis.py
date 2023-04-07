@@ -1,15 +1,16 @@
 # %%
-from numpy import char, squeeze
 import pandas as pd
 import matplotlib.pyplot as plt
-from pandas.core.interchange.dataframe_protocol import enum
+from datetime import datetime
 
 
-def prepare_data(filename: str) -> pd.DataFrame:
+def prepare_data(filename: str, drop: list, food_consume: bool = False) -> pd.DataFrame:
     """Load sheets from excel file
     ----------
     Parameters:
     filename : filename of the excel file (str)
+    drop : names of sheets to drop
+    food_consume : does this file contains food consuming info
     -------
     Returns:
     pd_sheets : pandas DataFrames
@@ -27,6 +28,9 @@ def prepare_data(filename: str) -> pd.DataFrame:
         nrows=2,
         header=None,
     )
+    for sheet in drop:
+        workbook.pop(sheet)
+        workbook_columns.pop(sheet)
 
     for key, sheet_column in workbook_columns.items():
         sheet_column = sheet_column.ffill().ffill(axis="columns")
@@ -58,25 +62,27 @@ def prepare_data(filename: str) -> pd.DataFrame:
         workbook_expenses[key] = workbook[key].iloc[:, idx + 1 :]
         workbook_expenses[key] = workbook_expenses[key].fillna(0)
 
-    food_consuming = pd.read_excel(
-        filename,
-        sheet_name=None,
-        nrows=1,
-        skiprows=34,
-        usecols="J:O",
-        index_col=0,
-        header=None,
-    )
-    # Не подходит по названиям, это исключение
-    food_consuming.pop("Декабрь_2022")
-
-    for key in food_consuming.keys():
-        food_consuming[key] = food_consuming[key].squeeze("columns")
-        food_consuming[key] = food_consuming[key].transpose()
-        food_consuming[key].index = (
-            workbook_expenses[key]["еда"].columns.get_level_values(0).tolist()[:5]
+    food_consuming = {}
+    if food_consume:
+        food_consuming = pd.read_excel(
+            filename,
+            sheet_name=None,
+            nrows=1,
+            skiprows=34,
+            usecols="J:O",
+            index_col=0,
+            header=None,
         )
-        food_consuming[key] = food_consuming[key].fillna(0)
+        for sheet in drop:
+            food_consuming.pop(sheet)
+
+        for key in food_consuming.keys():
+            food_consuming[key] = food_consuming[key].squeeze("columns")
+            food_consuming[key] = food_consuming[key].transpose()
+            food_consuming[key].index = (
+                workbook_expenses[key]["еда"].columns.get_level_values(0).tolist()[:5]
+            )
+            food_consuming[key] = food_consuming[key].fillna(0)
 
     return workbook_incomes, workbook_savings, workbook_expenses, food_consuming
 
@@ -92,32 +98,11 @@ def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None
     Returns:
     picture from matplotlib
     """
-    ru_to_eng_months = {
-        "Январь": "January",
-        "Февраль": "February",
-        "Март": "March",
-        "Апрель": "April",
-        "Май": "May",
-        "Июнь": "June",
-        "Июль": "July",
-        "Август": "August",
-        "Сентябрь": "September",
-        "Октябрь": "October",
-        "Ноябрь": "November",
-        "Декабрь": "December",
-    }
     chart_margin = pd.DataFrame()
     chart_margin["Доходы"] = pd.Series(inc_dict)
     chart_margin["Расходы"] = pd.Series(expenses_dict)
     chart_margin["Прибыль"] = chart_margin["Доходы"] - chart_margin["Расходы"]
     chart_margin["Накопления"] = pd.Series(savings_dict)
-    for ru_month, eng_month in ru_to_eng_months.items():
-        chart_margin.index = chart_margin.index.str.replace(ru_month, eng_month)
-    chart_margin.index = pd.to_datetime(chart_margin.index, format="%B_%Y")
-    chart_margin = chart_margin.sort_index()
-    chart_margin.index = chart_margin.index.strftime("%B_%Y")
-    for ru_month, eng_month in ru_to_eng_months.items():
-        chart_margin.index = chart_margin.index.str.replace(eng_month, ru_month)
     mask = chart_margin.copy()
     for i in range(len(mask.columns)):
         mask.iloc[:, i] = i + 1
@@ -151,12 +136,75 @@ def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None
     plt.show()
 
 
+def sort_dict_by_time(source_dict: dict, ascending: bool = True) -> dict:
+    """Sort dictionary by key by time
+    ----------
+    Parameters:
+    source_dict: dictionary with keys in format Month_Year
+    ascending: sort order
+    -------
+    Returns:
+    sorted dictionary
+    """
+    ru_to_eng_months = {
+        "Январь": "January",
+        "Февраль": "February",
+        "Март": "March",
+        "Апрель": "April",
+        "Май": "May",
+        "Июнь": "June",
+        "Июль": "July",
+        "Август": "August",
+        "Сентябрь": "September",
+        "Октябрь": "October",
+        "Ноябрь": "November",
+        "Декабрь": "December",
+    }
+    keys = []
+    for key in source_dict.keys():
+        for ru_month, eng_month in ru_to_eng_months.items():
+            key = key.replace(ru_month, eng_month)
+        key = datetime.strptime(key, "%B_%Y")
+        keys.append(key)
+    time_dict = dict(zip(keys, list(source_dict.values())))
+    sorted_time_dict = dict(sorted(time_dict.items(), reverse=(not ascending)))
+    keys = []
+    for key in sorted_time_dict.keys():
+        key = key.strftime("%B_%Y")
+        for ru_month, eng_month in ru_to_eng_months.items():
+            key = key.replace(eng_month, ru_month)
+        keys.append(key)
+    sorted_dict = dict(zip(keys, list(sorted_time_dict.values())))
+    return sorted_dict
+
+
 # %%
+my_2021 = "./data/incomes-expenses_2021.xlsx"
+my_2022 = "./data/incomes-expenses_2022.xlsx"
 my_2023 = "./data/incomes-expenses_2023.xlsx"
-incomes, savings, expenses, food_consuming = prepare_data(my_2023)
-incomes.pop("Декабрь_2022")
-savings.pop("Декабрь_2022")
-expenses.pop("Декабрь_2022")
+inc21, sav21, exp21, _ = prepare_data(
+    my_2021, drop=["Декабрь_2020", "Отчет"], food_consume=False
+)
+inc22, sav22, exp22, _ = prepare_data(
+    my_2022, drop=["Декабрь_2021", "Отчет"], food_consume=False
+)
+inc23, sav23, exp23, food_cons23 = prepare_data(
+    my_2023, drop=["Декабрь_2022"], food_consume=True
+)
+incomes = {**inc21, **inc22, **inc23}
+savings = {**sav21, **sav22, **sav23}
+expenses = {**exp21, **exp22, **exp23}
+incomes = sort_dict_by_time(incomes)
+savings = sort_dict_by_time(savings)
+expenses = sort_dict_by_time(expenses)
+# %%
+# Прибыль за год
+inc_dict = {key: value.values.sum() for (key, value) in incomes.items()}
+savings_dict = {key: value.iat[-1] for (key, value) in savings.items()}
+expenses_dict = {key: value.values.sum() for (key, value) in expenses.items()}
+
+plot_margin(inc_dict, savings_dict, expenses_dict)
+# %%
 # %%
 # Доход за год по группам
 inc_sum_dict = {key: value.sum() for (key, value) in incomes.items()}
@@ -190,11 +238,4 @@ for i, p in enumerate(ax.patches):
 
 ax.legend()
 plt.show()
-# %%
-# Прибыль за год
-inc_dict = {key: value.values.sum() for (key, value) in incomes.items()}
-savings_dict = {key: value.iat[-1] for (key, value) in savings.items()}
-expenses_dict = {key: value.values.sum() for (key, value) in expenses.items()}
-
-plot_margin(inc_dict, savings_dict, expenses_dict)
 # %%
