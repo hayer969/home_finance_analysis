@@ -168,6 +168,7 @@ def sort_dict_by_time(source_dict: dict, ascending: bool = True) -> dict:
     keys = []
     for key in source_dict.keys():
         for ru_month, eng_month in ru_to_eng_months.items():
+            key = key.lower().capitalize()
             key = key.replace(ru_month, eng_month)
         key = datetime.strptime(key, "%B_%Y")
         keys.append(key)
