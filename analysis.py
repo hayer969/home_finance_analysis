@@ -183,33 +183,79 @@ def sort_dict_by_time(source_dict: dict, ascending: bool = True) -> dict:
     return sorted_dict
 
 
-def forecast(source_dict: dict, until: str, method: str = "mean") -> dict:
+def reduce_dict_by_time(
+    source_dict: dict, start_month: str, end_month: str = False
+) -> dict:
+    """Reduce dictionary by key by time, stay only period of an interest
+    ----------
+    Parameters:
+    source_dict : dictionary with keys in format Month_Year
+    start_month : dictionary key from which final dictionary starts
+    end_month : dictionary key until which final dictionary ends
+    -------
+    Returns:
+    reduced dictionary
+    """
+
+    def del_items(sdict: dict, keys: list, month: str):
+        for key in keys:
+            if key == month:
+                break
+            del sdict[key]
+        return sdict
+
+    start_keys = list(source_dict.keys())
+    source_dict = del_items(source_dict, start_keys, start_month)
+    if end_month:
+        end_keys = list(source_dict.keys())
+        end_keys.reverse()
+        source_dict = del_items(source_dict, end_keys, end_month)
+    return source_dict
+
+
+def forecast(source_dict: dict, until: str, method: str = "mean", **kwargs) -> dict:
     """Forecast future incomes or expenses
     ----------
     Parameters:
     source_dict : dictionary with incomes-expenses data
     until : date until which data was recorded (inclusivly)
     method : method used for forcast, could be "mean" by default
+    **kwargs : keyword arguments to pass for inner method functions
     -------
     Returns:
     dictionary with forcasted data
     """
-    source_dict = sort_dict_by_time(source_dict)
-    forecasted_dict = {}
-    stop_summirize = False
-    mean = 0
-    for i, (key, value) in enumerate(source_dict.items()):
-        if not stop_summirize:
-            forecasted_dict[key] = value.values.sum()
-            if key == until:
-                sum = 0
-                for summand in forecasted_dict.values():
-                    sum += summand
-                mean = sum / (i + 1)
-                mean = round(mean)
-                stop_summirize = True
-        else:
-            forecasted_dict[key] = mean
+
+    def mean(source_dict: dict, until: str, **kwargs) -> dict:
+        """Forecast by mean values of previous periods
+        ----------
+        Parameters:
+        source_dict : dictionary with incomes-expenses data
+        until : date until which data was recorded (inclusivly)
+        **kwargs : just for compatability
+        -------
+        Returns:
+        dictionary with forcasted data
+        """
+        source_dict = sort_dict_by_time(source_dict)
+        forecasted_dict = {}
+        stop_summirize = False
+        mean = 0
+        for i, (key, value) in enumerate(source_dict.items()):
+            if not stop_summirize:
+                forecasted_dict[key] = value.values.sum()
+                if key == until:
+                    sum = 0
+                    for summand in forecasted_dict.values():
+                        sum += summand
+                    mean = sum / (i + 1)
+                    mean = round(mean)
+                    stop_summirize = True
+            else:
+                forecasted_dict[key] = mean
+        return forecasted_dict
+
+    forecasted_dict = eval(f"{method}(source_dict, until, **kwargs)")
     return forecasted_dict
 
 
@@ -218,7 +264,6 @@ def forecast_savings(
     incomes_dict: dict,
     expenses_dict: dict,
     until: str,
-    method: str = "mean",
 ) -> dict:
     """Forecast future savings
     ----------
@@ -227,7 +272,6 @@ def forecast_savings(
     incomes_dict : dictionary with incomes data
     expenses_dict : dictionary with expenses data
     until : date until which data was recorded (inclusivly)
-    method : method used for forcast, could be "mean" by default
     -------
     Returns:
     dictionary with forcasted data
@@ -264,22 +308,22 @@ inc23, sav23, exp23, food_cons23 = prepare_data(
     my_2023, drop=["Декабрь_2022"], food_consume=True
 )
 # %%
+# Прибыль за год
 incomes = {**inc21, **inc22, **inc23}
 savings = {**sav21, **sav22, **sav23}
 expenses = {**exp21, **exp22, **exp23}
-# Прибыль за год
-inc_dict = forecast(incomes, until="Март_2023")
-expenses_dict = forecast(expenses, until="Март_2023")
-savings_dict = forecast_savings(savings, inc_dict, expenses_dict, until="Март_2023")
-keys = list(inc_dict.keys())
-for key in keys:
-    if key == "Январь_2023":
-        break
-    del inc_dict[key]
-    del savings_dict[key]
-    del expenses_dict[key]
+incomes = sort_dict_by_time(incomes)
+incomes = reduce_dict_by_time(incomes, "Январь_2023")
 
-plot_margin(inc_dict, savings_dict, expenses_dict)
+finc = forecast(incomes, until="Март_2023")
+fexpenses = forecast(expenses, until="Март_2023")
+fsavings = forecast_savings(savings, finc, fexpenses, until="Март_2023")
+
+finc = reduce_dict_by_time(finc, "Январь_2023")
+fexpenses = reduce_dict_by_time(fexpenses, "Январь_2023")
+fsavings = reduce_dict_by_time(fsavings, "Январь_2023")
+
+plot_margin(finc, fsavings, fexpenses)
 # %%
 # Доход за год по группам
 inc_sum_dict = {key: value.sum() for (key, value) in incomes.items()}
