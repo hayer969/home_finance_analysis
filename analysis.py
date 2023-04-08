@@ -205,6 +205,7 @@ def reduce_dict_by_time(
             del sdict[key]
         return sdict
 
+    source_dict = sort_dict_by_time(source_dict)
     start_keys = list(source_dict.keys())
     source_dict = del_items(source_dict, start_keys, start_month)
     if end_month:
@@ -313,7 +314,6 @@ inc23, sav23, exp23, food_cons23 = prepare_data(
 incomes = {**inc21, **inc22, **inc23}
 savings = {**sav21, **sav22, **sav23}
 expenses = {**exp21, **exp22, **exp23}
-incomes = sort_dict_by_time(incomes)
 incomes = reduce_dict_by_time(incomes, "Январь_2023")
 
 finc = forecast(incomes, until="Март_2023")
