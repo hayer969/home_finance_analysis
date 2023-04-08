@@ -221,7 +221,7 @@ def forecast(source_dict: dict, until: str, method: str = "mean", **kwargs) -> d
     Parameters:
     source_dict : dictionary with incomes-expenses data
     until : date until which data was recorded (inclusivly)
-    method : method used for forcast, could be "mean" by default
+    method : method used for forcast, "mean" by default
     **kwargs : keyword arguments to pass for inner method functions
     -------
     Returns:
@@ -239,7 +239,6 @@ def forecast(source_dict: dict, until: str, method: str = "mean", **kwargs) -> d
         Returns:
         dictionary with forcasted data
         """
-        source_dict = sort_dict_by_time(source_dict)
         forecasted_dict = {}
         stop_summirize = False
         mean = 0
@@ -257,6 +256,27 @@ def forecast(source_dict: dict, until: str, method: str = "mean", **kwargs) -> d
                 forecasted_dict[key] = mean
         return forecasted_dict
 
+    def drop_channels(source_dict: dict, until: str, channels: list, **kwargs) -> dict:
+        """Forecast by mean values of previous periods but drop some income or expense channels
+        ----------
+        Parameters:
+        source_dict : dictionary with incomes-expenses data
+        until : date until which data was recorded (inclusivly)
+        channels : list with column names to drop from calculations of the mean
+        **kwargs : just for compatability
+        -------
+        Returns:
+        dictionary with forcasted data
+        """
+        edited_dict = source_dict.copy()
+        for key in source_dict.keys():
+            for channel in channels:
+                if channel in source_dict[key].columns:
+                    edited_dict[key] = edited_dict[key].drop(channel, axis="columns")
+        forecasted_dict = mean(edited_dict, until)
+        return forecasted_dict
+
+    source_dict = sort_dict_by_time(source_dict)
     forecasted_dict = eval(f"{method}(source_dict, until, **kwargs)")
     return forecasted_dict
 
@@ -317,7 +337,12 @@ expenses = {**exp21, **exp22, **exp23}
 incomes = reduce_dict_by_time(incomes, "Январь_2023")
 
 finc = forecast(incomes, until="Март_2023")
-fexpenses = forecast(expenses, until="Март_2023")
+fexpenses = forecast(
+    expenses,
+    until="Март_2023",
+    method="drop_channels",
+    channels=[("семейные", "отдых"), ("Отдых", "Путешествия")],
+)
 fsavings = forecast_savings(savings, finc, fexpenses, until="Март_2023")
 
 finc = reduce_dict_by_time(finc, "Январь_2023")
