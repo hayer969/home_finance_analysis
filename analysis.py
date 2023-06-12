@@ -2,6 +2,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
+import plotly.graph_objects as go
 
 
 def prepare_data(filename: str, drop: list, food_consume: bool = False) -> pd.DataFrame:
@@ -87,7 +88,9 @@ def prepare_data(filename: str, drop: list, food_consume: bool = False) -> pd.Da
     return workbook_incomes, workbook_savings, workbook_expenses, food_consuming
 
 
-def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None:
+def plot_margin_matplotlib(
+    inc_dict: dict, savings_dict: dict, expenses_dict: dict
+) -> None:
     """Plot margin bar chart
     ----------
     Parameters:
@@ -139,6 +142,67 @@ def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None
     ax.legend()
     ax.axhline(y=0.0)
     plt.show()
+
+
+def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None:
+    """Plot margin bar chart
+    ----------
+    Parameters:
+    inc_dict : dictionary with monthly incomes
+    savings_dict : dictionary with monthly savings
+    expenses_dict : dictionary with monthly expenses
+    -------
+    Returns:
+    picture from plotly
+    """
+    chart_margin = pd.DataFrame()
+    chart_margin["Доходы"] = pd.Series(inc_dict)
+    chart_margin["Расходы"] = pd.Series(expenses_dict)
+    chart_margin["Прибыль"] = chart_margin["Доходы"] - chart_margin["Расходы"]
+    chart_margin["Накопления"] = pd.Series(savings_dict)
+    colors = [
+        "#3d85c6",
+        "#ff0000",
+        "#ffff00",
+        "#ffffcd",
+    ]
+
+    layout = go.Layout(
+        xaxis=dict(overlaying="x2"),
+        xaxis2=dict(
+            title="Накопления",
+            side="top",
+            tickmode="array",
+            tickvals=chart_margin.index.tolist(),
+            ticktext=chart_margin["Накопления"],
+        ),
+    )
+    fig = go.Figure(layout=layout)
+    for coloridx, key in enumerate(chart_margin.columns[:3]):
+        fig.add_trace(
+            go.Bar(
+                x=chart_margin.index.tolist(),
+                y=chart_margin[key],
+                text=chart_margin[key],
+                opacity=0.85,
+                marker_color=[colors[coloridx] for _ in range(len(chart_margin.index))],
+                name=key,
+            )
+        )
+    fig.add_trace(
+        go.Bar(
+            x=chart_margin.index.tolist(),
+            y=chart_margin["Накопления"],
+            xaxis="x2",
+            width=0.9,
+            offset=-0.45,
+            cliponaxis=False,
+            marker_color=[colors[3] for _ in range(len(chart_margin.index))],
+            name="Накопления",
+        )
+    )
+    fig.update_layout(barmode="group", yaxis=dict(title="RUB (тысячи)"))
+    fig.show()
 
 
 def sort_dict_by_time(source_dict: dict, ascending: bool = True) -> dict:
@@ -334,16 +398,16 @@ inc23, sav23, exp23, food_cons23 = prepare_data(
 incomes = {**inc21, **inc22, **inc23}
 savings = {**sav21, **sav22, **sav23}
 expenses = {**exp21, **exp22, **exp23}
-incomes = reduce_dict_by_time(incomes, "Январь_2023")
+# incomes = reduce_dict_by_time(incomes, "Май_2023")
 
-finc = forecast(incomes, until="Март_2023")
+finc = forecast(incomes, until="Май_2023")
 fexpenses = forecast(
     expenses,
-    until="Март_2023",
-    method="drop_channels",
-    channels=[("семейные", "отдых"), ("Отдых", "Путешествия")],
+    until="Июнь_2023",
+    # method="drop_channels",
+    # channels=[("семейные", "отдых"), ("Отдых", "Путешествия")],
 )
-fsavings = forecast_savings(savings, finc, fexpenses, until="Март_2023")
+fsavings = forecast_savings(savings, finc, fexpenses, until="Июнь_2023")
 
 finc = reduce_dict_by_time(finc, "Январь_2023")
 fexpenses = reduce_dict_by_time(fexpenses, "Январь_2023")
