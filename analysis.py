@@ -205,6 +205,60 @@ def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None
     fig.show()
 
 
+def plot_alluvial(inp_dict: dict) -> None:
+    """Plot alluvial chart from yearly spends or incomes groups to monthes
+    ----------
+    Parameters:
+    inp_dict : dictionary with data, such as monthly expenses
+    -------
+    Returns:
+    picture from plotly
+    """
+    groups = [group.index.tolist() for group in inp_dict.values()]
+    groups = [group for sublist in groups for group in sublist]
+    groups = list(set(groups))
+    groups = sorted(groups)
+    columns = ["groups", "time", "values"]
+    df = pd.DataFrame(columns=columns)
+    for key, values in inp_dict.items():
+        for group, value in values.items():
+            row = pd.DataFrame(data=[[group, key, value]], columns=columns)
+            df = pd.concat([df, row])
+    df = df.fillna(0)
+
+    inp_dict = sort_dict_by_time(inp_dict)
+    monthes = list(inp_dict.keys())
+    labels = groups + monthes
+    color = "papayawhip"
+    fig = go.Figure(
+        data=[
+            go.Sankey(
+                node=dict(label=labels, color=color),
+                link=dict(
+                    source=[
+                        labels.index(group)
+                        for idx, group in enumerate(df["groups"])
+                        if df["values"].iloc[idx] > 0
+                    ],
+                    target=[
+                        labels.index(time)
+                        for idx, time in enumerate(df["time"])
+                        if df["values"].iloc[idx] > 0
+                    ],
+                    value=[
+                        value
+                        for idx, value in enumerate(df["values"])
+                        if df["values"].iloc[idx] > 0
+                    ],
+                    color=color,
+                ),
+            )
+        ]
+    )
+    fig.update_layout()
+    fig.show()
+
+
 def sort_dict_by_time(source_dict: dict, ascending: bool = True) -> dict:
     """Sort dictionary by key by time
     ----------
@@ -414,6 +468,10 @@ fexpenses = reduce_dict_by_time(fexpenses, "Январь_2023")
 fsavings = reduce_dict_by_time(fsavings, "Январь_2023")
 
 plot_margin(finc, fsavings, fexpenses)
+# %%
+exp_sum_dict = {key: value.sum() for (key, value) in expenses.items()}
+exp_sum_dict = reduce_dict_by_time(exp_sum_dict, "Январь_2023")
+plot_alluvial(exp_sum_dict)
 # %%
 # Доход за год по группам
 inc_sum_dict = {key: value.sum() for (key, value) in incomes.items()}
