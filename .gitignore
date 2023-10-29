@@ -1,5 +1,5 @@
 # Data for testing creation of the reports
-data/
+data/*.xlsx
 # Virtual environment
 .venv/
 # Python cache
