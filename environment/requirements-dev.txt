@@ -1,2 +1,1 @@
-﻿pandas-stubs>=2.1.1.230928
-types-pytz>=2023.3.1.1
+pandas-stubs>=2.1.1.230928

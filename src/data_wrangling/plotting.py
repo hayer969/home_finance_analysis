@@ -1,63 +1,6 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from src.data_wrangling.dict_transformations import sort_dict_by_time
-
-
-def plot_margin_matplotlib(
-    inc_dict: dict, savings_dict: dict, expenses_dict: dict
-) -> None:
-    """Plot margin bar chart
-    ----------
-    Parameters:
-    inc_dict : dictionary with monthly incomes
-    savings_dict : dictionary with monthly savings
-    expenses_dict : dictionary with monthly expenses
-    -------
-    Returns:
-    picture from matplotlib
-    """
-    chart_margin = pd.DataFrame()
-    chart_margin["Доходы"] = pd.Series(inc_dict)
-    chart_margin["Расходы"] = pd.Series(expenses_dict)
-    chart_margin["Прибыль"] = chart_margin["Доходы"] - chart_margin["Расходы"]
-    chart_margin["Накопления"] = pd.Series(savings_dict)
-    mask = chart_margin.copy()
-    for i in range(len(mask.columns)):
-        mask.iloc[:, i] = i + 1
-    mask = mask.transpose()
-    mask = mask.to_numpy().flatten()
-
-    plt.rcParams.update({"figure.autolayout": True})
-    ax = chart_margin.plot(kind="bar", position=0.5)
-    ax.set_xticklabels(chart_margin.index.tolist(), rotation=270)
-    color = ["#3d85c6", "#ff0000", "#8fce00", "#fff7c4"]
-
-    for i, p in enumerate(ax.patches):
-        text = str(p.get_height()) if p.get_height() != 0 else ""
-        if mask[i] == 4:
-            ax.annotate(text, (p.get_x(), p.get_height() * 1.05))
-            plt.setp(
-                p,
-                width=0.9,
-                zorder=1,
-                x=p.get_x() - 0.5,
-                color=color[mask[i] - 1],
-            )
-        else:
-            distance = p.get_x() + 0.1 * mask[i] - 0.1
-            abs_height = abs(p.get_height())
-            height = (
-                p.get_height() * (1 + mask[i] * 0.1)
-                if abs_height < 100000
-                else p.get_height()
-            )
-            ax.annotate(text, (distance, height))
-            plt.setp(p, width=0.2, zorder=2, x=distance, color=color[mask[i] - 1])
-
-    ax.legend()
-    ax.axhline(y=0.0)
-    plt.show()
 
 
 def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None:

@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from src.data_wrangling.loader import prepare_data
 from src.data_wrangling.dict_transformations import reduce_dict_by_time
 from src.data_wrangling.forecasting import forecast
