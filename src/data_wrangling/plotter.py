@@ -1,6 +1,6 @@
 import pandas as pd
 import plotly.graph_objects as go
-from src.data_wrangling.dict_transformations import sort_dict_by_time
+from src.data_wrangling.dict_handler import sort_dict_by_time
 
 
 def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None:

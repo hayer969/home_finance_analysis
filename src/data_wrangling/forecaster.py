@@ -1,5 +1,5 @@
-from src.data_wrangling.dict_transformations import reduce_dict_by_time
-from src.data_wrangling.dict_transformations import sort_dict_by_time
+from src.data_wrangling.dict_handler import reduce_dict_by_time
+from src.data_wrangling.dict_handler import sort_dict_by_time
 
 
 def forecast(source_dict: dict, until: str, method: str = "mean", **kwargs) -> dict:

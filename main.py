@@ -1,8 +1,8 @@
 from src.data_wrangling.loader import prepare_data
-from src.data_wrangling.dict_transformations import reduce_dict_by_time
-from src.data_wrangling.forecasting import forecast
-from src.data_wrangling.forecasting import forecast_savings
-from src.data_wrangling.plotting import plot_margin
+from src.data_wrangling.dict_handler import reduce_dict_by_time
+from src.data_wrangling.forecaster import forecast
+from src.data_wrangling.forecaster import forecast_savings
+from src.data_wrangling.plotter import plot_margin
 
 
 def main() -> int:
