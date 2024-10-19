@@ -1,12 +1,17 @@
 # Home finance analysis
 
-**Goal**: Create application which allows to plot graphs based on the incomes/expenses of the household with some forecasting for future incomes/expenses to provide user common understand of his finance state. 
+**Goal**:
+Create application which allows to plot graphs based on the incomes/expenses
+of the household with some forecasting for future incomes/expenses
+to provide user common understand of his finance state.
 
 ## How to use
 
 Right now all manipulations only available inside the code.  
 
-- Just write down your incomes/expenses in excel sheets. Use `./data/template.xlsx` as your boilerplate. The more you have data, the better for forecasting.  
+- Just write down your incomes/expenses in excel sheets.
+  Use `./data/template.xlsx` as your boilerplate.
+  The more you have data, the better for forecasting.
 - Load your data.  
 - Choose time period as baseline for forecast.  
 - Choose time period for graphs.  
