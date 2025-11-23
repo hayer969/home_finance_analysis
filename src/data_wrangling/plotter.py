@@ -45,7 +45,7 @@ def plot_margin(inc_dict: dict, savings_dict: dict, expenses_dict: dict) -> None
                 text=chart_margin[key],
                 opacity=0.85,
                 marker_color=[colors[coloridx] for _ in range(len(chart_margin.index))],
-                name=key,
+                name=f"{key}: {chart_margin[key].sum()}",
             )
         )
     fig.add_trace(
@@ -83,7 +83,7 @@ def plot_alluvial(inp_dict: dict) -> None:
         for group, value in values.items():
             row = pd.DataFrame(data=[[group, key, value]], columns=columns)
             df = pd.concat([df, row])
-    df = df.fillna(0)
+    df = df.fillna(0).infer_objects(copy=False)
 
     inp_dict = sort_dict_by_time(inp_dict)
     monthes = list(inp_dict.keys())

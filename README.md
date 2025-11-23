@@ -22,6 +22,10 @@ Right now all manipulations only available inside the code.
 
 Sheet names consists of `{Month}_{year}` for example: **January_2024**
 
+## Run from toolbox container
+
+`BROWSER="flatpak-spawn --host firefox %s" python main.py`
+
 ![template_structure](template_structure.png)
 
 1. Data header. **SHOULD NOT** be changed *(used in the code as reference point)*.  
