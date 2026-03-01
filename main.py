@@ -19,11 +19,13 @@ def main() -> int:
     my_2023 = "./data/incomes-expenses_2023.xlsx"
     my_2024 = "./data/incomes-expenses_2024.xlsx"
     my_2025 = "./data/incomes-expenses_2025.xlsx"
+    my_2026 = "./data/incomes-expenses_2026.xlsx"
     lil_2021 = "./data/incomes-expenses_LL_2021.xlsx"
     lil_2022 = "./data/incomes-expenses_LL_2022.xlsx"
     lil_2023 = "./data/incomes-expenses_LL_2023.xlsx"
     lil_2024 = "./data/incomes-expenses_LL_2024.xlsx"
     lil_2025 = "./data/incomes-expenses_LL_2025.xlsx"
+    lil_2026 = "./data/incomes-expenses_LL_2026.xlsx"
     inc12, sav12, exp12, _ = prepare_data(
         my_2012,
         drop=["Декабрь_2011", "Октябрь_2011", "Ноябрь_2011"],
@@ -66,6 +68,9 @@ def main() -> int:
     inc25, sav25, exp25, food_cons25 = prepare_data(
         my_2025, drop=["Декабрь_2024"], food_consume=True
     )
+    inc26, sav26, exp26, food_cons26 = prepare_data(
+        my_2026, drop=["Декабрь_2025"], food_consume=True
+    )
     lil_inc21, lil_sav21, lil_exp21, _ = prepare_data(
         lil_2021, drop=["Отчет"], food_consume=False
     )
@@ -81,22 +86,26 @@ def main() -> int:
     lil_inc25, lil_sav25, lil_exp25, food_cons25 = prepare_data(
         lil_2025, drop=["Декабрь_2024"], food_consume=True
     )
+    lil_inc26, lil_sav26, lil_exp26, food_cons26 = prepare_data(
+        lil_2026, drop=["Декабрь_2025"], food_consume=True
+    )
     # Прибыль за год
     incomes = {
-        **inc12,
-        **inc13,
-        **inc14,
-        **inc15,
-        **inc16,
-        **inc17,
-        **inc18,
-        **inc19,
-        **inc20,
-        **inc21,
-        **inc22,
-        **inc23,
+        # **inc12,
+        # **inc13,
+        # **inc14,
+        # **inc15,
+        # **inc16,
+        # **inc17,
+        # **inc18,
+        # **inc19,
+        # **inc20,
+        # **inc21,
+        # **inc22,
+        # **inc23,
         **inc24,
         **inc25,
+        **inc26,
     }
     savings = {
         **sav12,
@@ -113,29 +122,32 @@ def main() -> int:
         **sav23,
         **sav24,
         **sav25,
+        **sav26,
     }
     expenses = {
-        **exp12,
-        **exp13,
-        **exp14,
-        **exp15,
-        **exp16,
-        **exp17,
-        **exp18,
-        **exp19,
-        **exp20,
+        # **exp12,
+        # **exp13,
+        # **exp14,
+        # **exp15,
+        # **exp16,
+        # **exp17,
+        # **exp18,
+        # **exp19,
+        # **exp20,
         **exp21,
         **exp22,
         **exp23,
         **exp24,
         **exp25,
+        **exp26,
     }
     incomes_lil = {
-        **lil_inc21,
-        **lil_inc22,
-        **lil_inc23,
-        **lil_inc24,
+        # **lil_inc21,
+        # **lil_inc22,
+        # **lil_inc23,
+        # **lil_inc24,
         **lil_inc25,
+        **lil_inc26,
     }
     savings_lil = {
         **lil_sav21,
@@ -143,6 +155,7 @@ def main() -> int:
         **lil_sav23,
         **lil_sav24,
         **lil_sav25,
+        **lil_sav26,
     }
     expenses_lil = {
         **lil_exp21,
@@ -150,6 +163,7 @@ def main() -> int:
         **lil_exp23,
         **lil_exp24,
         **lil_exp25,
+        **lil_exp26,
     }
     incomes_marital = {}
     savings_marital = {}
@@ -163,7 +177,7 @@ def main() -> int:
         incomes_marital[key] = incomes[key] + incomes_lil[key]
         savings_marital[key] = savings[key] + savings_lil[key]
         expenses_marital[key] = expenses[key] + expenses_lil[key]
-    # incomes = reduce_dict_by_time(incomes, "Сентябрь_2023")
+    incomes = reduce_dict_by_time(incomes, "Сентябрь_2025")
 
     # Forecast section
     # finc = forecast(incomes, until="Октябрь_2023")
@@ -180,40 +194,40 @@ def main() -> int:
     # fsavings = reduce_dict_by_time(fsavings, start_month="Январь_2023")
     #
     # plot_margin(finc, fsavings, fexpenses)
-    finc = forecast(incomes, until="Декабрь_2025")
-    fexp = forecast(expenses, until="Июль_2025")
-    fsav = forecast_savings(savings, finc, fexp, until="Июль_2025")
-    finc_lil = forecast(incomes_lil, until="Июль_2025")
-    fexp_lil = forecast(expenses_lil, until="Июль_2025")
-    fsav_lil = forecast_savings(savings_lil, finc_lil, fexp_lil, until="Июль_2025")
-    finc_marital = forecast(incomes_marital, until="Июль_2025")
+    finc = forecast(incomes, until="Декабрь_2026")
+    fexp = forecast(expenses, until="Февраль_2026")
+    fsav = forecast_savings(savings, finc, fexp, until="Февраль_2026")
+    finc_lil = forecast(incomes_lil, until="Декабрь_2026")
+    fexp_lil = forecast(expenses_lil, until="Февраль_2026")
+    fsav_lil = forecast_savings(savings_lil, finc_lil, fexp_lil, until="Февраль_2026")
+    finc_marital = forecast(incomes_marital, until="Декабрь_2026")
 
     # expenses_marital = reduce_dict_by_time(expenses_marital, start_month="Январь_2024", end_month="Декабрь_2024")
     fexp_marital = forecast(
         expenses_marital,
-        until="Июль_2025",
+        until="Февраль_2026",
         # method="drop_channels",
         # channels=[("Отдых"), ("Путешествия")],
     )
 
     fsav_marital = forecast_savings(
-        savings_marital, finc_marital, fexp_marital, until="Июль_2025"
+        savings_marital, finc_marital, fexp_marital, until="Февраль_2026"
     )
-    rincomes = reduce_dict_by_time(finc, start_month="Январь_2025", end_month="Декабрь_2025")
-    rexpenses = reduce_dict_by_time(fexp, start_month="Январь_2025", end_month="Декабрь_2025")
-    rsavings = reduce_dict_by_time(fsav, start_month="Январь_2025", end_month="Декабрь_2025")
-    rincomes_lil = reduce_dict_by_time(finc_lil, start_month="Январь_2025", end_month="Декабрь_2025")
-    rexpenses_lil = reduce_dict_by_time(fexp_lil, start_month="Январь_2025", end_month="Декабрь_2025")
-    rsavings_lil = reduce_dict_by_time(fsav_lil, start_month="Январь_2025", end_month="Декабрь_2025")
-    rincomes_marital = reduce_dict_by_time(finc_marital, start_month="Январь_2025", end_month="Декабрь_2025")
-    rexpenses_marital = reduce_dict_by_time(fexp_marital, start_month="Январь_2025", end_month="Декабрь_2025")
-    rsavings_marital = reduce_dict_by_time(fsav_marital, start_month="Январь_2025", end_month="Декабрь_2025")
+    rincomes = reduce_dict_by_time(finc, start_month="Январь_2026", end_month="Декабрь_2026")
+    rexpenses = reduce_dict_by_time(fexp, start_month="Январь_2026", end_month="Декабрь_2026")
+    rsavings = reduce_dict_by_time(fsav, start_month="Январь_2026", end_month="Декабрь_2026")
+    rincomes_lil = reduce_dict_by_time(finc_lil, start_month="Январь_2026", end_month="Декабрь_2026")
+    rexpenses_lil = reduce_dict_by_time(fexp_lil, start_month="Январь_2026", end_month="Декабрь_2026")
+    rsavings_lil = reduce_dict_by_time(fsav_lil, start_month="Январь_2026", end_month="Декабрь_2026")
+    rincomes_marital = reduce_dict_by_time(finc_marital, start_month="Январь_2026", end_month="Декабрь_2026")
+    rexpenses_marital = reduce_dict_by_time(fexp_marital, start_month="Январь_2026", end_month="Декабрь_2026")
+    rsavings_marital = reduce_dict_by_time(fsav_marital, start_month="Январь_2026", end_month="Декабрь_2026")
     plot_margin(rincomes, rsavings, rexpenses)
     plot_margin(rincomes_lil, rsavings_lil, rexpenses_lil)
     plot_margin(rincomes_marital, rsavings_marital, rexpenses_marital)
     # %%
     exp_sum_dict = {key: value.sum() for (key, value) in expenses_marital.items()}
-    exp_sum_dict = reduce_dict_by_time(exp_sum_dict, start_month="Январь_2025", end_month="Декабрь_2025")
+    exp_sum_dict = reduce_dict_by_time(exp_sum_dict, start_month="Январь_2025", end_month="Февраль_2026")
     plot_alluvial(exp_sum_dict)
     # %%
     # # Доход за год по группам
